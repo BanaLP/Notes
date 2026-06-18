@@ -17,8 +17,6 @@ description: Use when user wants to generate test cases from a Jira Story ticket
 
 8-step interactive workflow: Story → Epic (Wajib) → Sub-tasks → QA Context Checkpoint → API Contract Check → Pilih Engineer → Sintesis test case → Post sebagai comment.
 
-**Output Quality Standard:** Format 5 elemen wajib (benchmark: GENESIS-14851) — Traceability Matrix, Skenario Testing Table, GWT Flows, Boundary Testing, Data Requirements.
-
 **Approach:** AI Synthesis — Epic PRD + Sub-task QA mendefinisikan ekspektasi sebagai *primary benchmark*; test case memvalidasi apakah Sub-task Engineer meng-cover semua ekspektasi tersebut. Gap antara scope engineer dan ekspektasi QA + Product dicatat otomatis, dan dipost sebagai comment terpisah jika ditemukan.
 
 ## When to Use
@@ -511,136 +509,30 @@ Analisis dengan reasoning berikut:
 
 1. **Bangun ekspektasi:** Gunakan `epic_context` (PRD) + `qa_context` (skenario, impact, expected result dari semua QA) sebagai daftar lengkap apa yang diharapkan oleh product dan QA
 2. **Identifikasi scope engineer:** Baca deskripsi Sub-task Engineer → petakan fitur/behaviour yang dikerjakan
-3. **Buat test case:** Hasilkan dalam format **5 elemen wajib** (lihat Step 6) yang mencakup:
-    - **Traceability Matrix:** setiap AC engineer → test scenario yang memvalidasinya
-    - **Skenario Testing Table:** Actor × Kondisi × Expected Result × Tipe × AC Ref
-    - **GWT Flows:** 2–3 flow utama (happy path + critical edge case)
-    - **Boundary Testing:** jika ada state machine, batas numerik, atau kondisi transisi
-    - **Data Requirements:** akun, data, dan config yang dibutuhkan QA untuk setup staging
+3. **Buat test case:** Hasilkan skenario yang:
+   - Memvalidasi bahwa scope engineer meng-cover ekspektasi dari QA context dan PRD Epic
+   - Mencakup happy path + edge case sesuai AC engineer
+   - Mengikuti pola/gaya penulisan dari kerangka Sub-task QA
 4. **Deteksi gap:**
-    - Ekspektasi dari Sub-task QA atau PRD Epic yang **tidak ter-cover** oleh scope engineer ini → catat sebagai gap
-    - Scope di AC engineer yang **tidak selaras** dengan ekspektasi QA/PRD → catat sebagai potensi mismatch
+   - Ekspektasi dari Sub-task QA atau PRD Epic yang **tidak ter-cover** oleh scope engineer ini → catat sebagai gap
+   - Scope di AC engineer yang **tidak selaras** dengan ekspektasi QA/PRD → catat sebagai potensi mismatch
 
 ---
 
 ## Step 6 — Format Output
 
-Gunakan format **5 elemen wajib** (benchmark kualitas: GENESIS-14851). Minimal harus ada Elemen 1 dan 2. Elemen 3–5 disesuaikan dengan kompleksitas tiket.
-
----
-
-### Elemen 1 — Traceability Matrix
-
-Petakan setiap AC/requirement engineer ke test scenario yang memvalidasinya:
+**Test case section:**
 
 ```markdown
-### Traceability Matrix: [ENGINEER-KEY]
+### Test Case: [ENGINEER-KEY] <summary>
 
-| RE ID | Requirement / Acceptance Criteria  | TC ID | Test Scenario                       | Tipe Data |
-|-------|-------------------------------------|-------|-------------------------------------|-----------|
-| RE-01 | <AC dari tiket engineer>            | TC-01 | <skenario happy path>               | Positive  |
-| RE-01 | <AC yang sama, edge case>           | TC-02 | <skenario invalid input>            | Negative  |
-| RE-02 | <AC kedua>                          | TC-03 | <skenario>                          | Positive  |
-```
-
-> RE ID mengikuti urutan AC di tiket engineer. TC ID link ke nomor skenario di Elemen 2.
-
----
-
-### Elemen 2 — Skenario Testing Table
-
-Format lengkap: Actor, Kondisi, Expected Result eksplisit, Tipe Testing, AC Reference:
-
-```markdown
-### Skenario Testing: [ENGINEER-KEY] <summary>
-
-**Functional Testing:**
-
-| No | Actor          | Kondisi                      | Expected Result                                              | Tipe       | AC Ref |
-|----|----------------|------------------------------|--------------------------------------------------------------|------------|--------|
-| 1  | <peran user>   | <kondisi/input valid>        | <state berubah, UI tampil apa, data tersimpan apa>           | Functional | RE-01  |
-| 2  | <peran user>   | <kondisi valid lainnya>      | <expected result eksplisit>                                  | Functional | RE-02  |
-
-**Validation Testing:**
-
-| No | Actor          | Kondisi                      | Expected Result                                              | Tipe       | AC Ref |
-|----|----------------|------------------------------|--------------------------------------------------------------|------------|--------|
-| 3  | <actor>        | <input tidak valid / error>  | <pesan error spesifik / behavior yang diharapkan>            | Validation | RE-01  |
-
-**Impact Testing:**
-
-| No | Actor          | Kondisi                                     | Expected Result                         | Tipe   | AC Ref |
-|----|----------------|---------------------------------------------|-----------------------------------------|--------|--------|
-| 4  | <actor>        | <aksi yang berpotensi berdampak ke lain>    | <fitur lain tidak terganggu>            | Impact | —      |
+| No | Skenario | Expected Result |
+|----|----------|-----------------|
+| 1  | <skenario> | <expected result> |
+| 2  | <skenario> | <expected result> |
 
 **Referensi Sub-task QA:** [QA-KEY1], [QA-KEY2]
 ```
-
-> ⚠️ **Expected Result harus eksplisit** — bukan "berhasil" atau "Verify X". Sebutkan: state yang berubah, UI yang tampil, data yang tersimpan, atau pesan yang muncul.
-
----
-
-### Elemen 3 — GWT Flows (2–3 flow utama)
-
-Tulis GWT untuk 2–3 flow kritikal: minimal satu happy path dan satu edge case/failure.
-
-```markdown
-### GWT Flows: [ENGINEER-KEY]
-
-**Flow 1: <nama flow, misal: "User berhasil melakukan X">**
-
-    Given : <kondisi awal / state sistem sebelum aksi>
-    When  : <aksi yang dilakukan user/sistem>
-    Then  : <semua perubahan: state, UI, data, notifikasi>
-
-**Flow 2: <nama flow, misal: "Gagal karena kondisi Y tidak valid">**
-
-    Given : <kondisi awal>
-    When  : <aksi dengan kondisi tidak valid>
-    Then  : <pesan error spesifik yang muncul>
-            <state tidak berubah — tidak ada side effect>
-```
-
----
-
-### Elemen 4 — Boundary & Equivalence Testing
-
-Render **hanya jika relevan**: state machine, batas numerik, kondisi waktu, atau transisi state. Skip jika tidak ada batasan tipe ini.
-
-```markdown
-### Boundary Testing: [ENGINEER-KEY]
-
-| Kondisi Batas   | Input / State          | Expected Result          | Keterangan         |
-|-----------------|------------------------|--------------------------|--------------------|
-| Minimum valid   | <nilai minimum>        | <expected>               | Valid partition     |
-| Tepat di batas  | <nilai batas>          | <expected>               | Boundary value      |
-| Melewati batas  | <nilai di atas batas>  | <error / blocked>        | Invalid partition   |
-
-**State Transition Matrix** (jika ada state machine):
-
-| State Awal   | Aksi                  | State Akhir   | Valid?      |
-|--------------|-----------------------|---------------|-------------|
-| <state A>    | <aksi normal>         | <state B>     | ✅ Valid    |
-| <state A>    | <aksi bypass/invalid> | —             | ❌ Blocked  |
-```
-
----
-
-### Elemen 5 — Data Requirements
-
-Daftar akun, data, dan config yang dibutuhkan QA untuk setup di staging sebelum testing:
-
-```markdown
-### Data Requirements: [ENGINEER-KEY]
-
-| Tipe Data | Deskripsi                                                          | Sumber                        |
-|-----------|--------------------------------------------------------------------|-------------------------------|
-| Akun      | <tipe akun: Kurir active, Admin, Mitra POS, dll>                   | Staging env                   |
-| Data      | <data yang diperlukan: STT di-pickup, tagihan belum lunas, dll>    | Seed atau buat manual         |
-| Config    | <feature flag / setting: flag X = true, role Y enabled>            | Tim backend / staging config  |
-```
-
----
 
 **Gap section (hanya render jika ada gap):**
 
@@ -661,6 +553,7 @@ Jika tidak ada Sub-task QA sama sekali:
 > ⚠️ Tidak ada Sub-task QA sebagai referensi. Test case dibuat hanya dari deskripsi Sub-task Engineer dan Epic PRD.
 ```
 
+---
 
 ## Step 7 — Konfirmasi sebelum Post
 
@@ -805,8 +698,3 @@ Jika ada beberapa engineer dipilih → proses sekuensial, ulangi Step 4–8 per 
 | Tambah konfirmasi di Step 2.8 | API contract check **auto-continue** — tidak ada `question()`, hasil langsung tampil dan flow lanjut |
 | Post contract analysis ke 1 tiket saja | Mismatch ditemukan → **post ke FE dan BE** — keduanya perlu aware karena bisa kerja paralel |
 | Expect contract check akurat 100% dari free-form | Ekstraksi dari teks bebas adalah **best-effort** — engineer tetap harus review hasilnya |
-| Format output hanya tabel `No / Skenario / Expected` | Gunakan format **5 elemen**: Traceability Matrix + Skenario Testing Table + GWT + Boundary + Data Requirements |
-| Expected result vague ("Verify berhasil", "Pastikan X bekerja") | Tulis expected result **eksplisit**: state berubah, UI tampil apa, data tersimpan apa, pesan error apa |
-| Actor generik ("user" saja tanpa peran) | Kolom Actor harus **spesifik**: "Kurir", "Admin", "Mitra POS" — bukan hanya "user" generik |
-| Skip Data Requirements | QA perlu tahu **akun dan data apa** yang disiapkan di staging sebelum eksekusi testing |
-| GWT hanya happy path saja | Tulis minimal **2 GWT**: satu happy path utama + satu edge case / failure penting |
